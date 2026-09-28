@@ -1,0 +1,38 @@
+# Render Blueprint: 1 free web-сервис (боты + веб в одном контейнере),
+# база — внешний бесплатный Postgres (Supabase/Neon), сон лечится UptimeRobot.
+services:
+  - type: web
+    name: autoparts
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    startCommand: ./start.sh
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # вставить: postgresql+asyncpg://...supabase.co:5432/postgres?ssl=require
+      - key: CATALOG_BOT_TOKEN
+        sync: false
+      - key: ORDER_BOT_TOKEN
+        sync: false
+      - key: ORDER_BOT_USERNAME
+        value: CarPartsSupport_bot
+      - key: ADMIN_IDS
+        value: "8802399573"
+      - key: SHOP_NAME
+        value: АвтоЗапчасти
+      - key: SUPPORT_USERNAME
+        value: pitbull153193
+      - key: WEB_ADMIN_USER
+        value: admin
+      - key: WEB_ADMIN_PASSWORD
+        sync: false
+      - key: WEB_PUBLIC_URL
+        sync: false  # вставить после деплоя: https://autoparts-xxxx.onrender.com
+      - key: PHOTO_AI_API_KEY
+        sync: false
+      - key: PHOTO_AI_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai
+      - key: PHOTO_AI_MODEL
+        value: gemini-3.1-flash-lite
