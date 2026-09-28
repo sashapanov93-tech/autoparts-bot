@@ -13,6 +13,7 @@ from app.handlers import admin as admin_handler
 from app.handlers import catalog as catalog_handler
 from app.handlers import selection as selection_handler
 from app.handlers import start as start_handler
+from app.handlers.fallback import catalog_fallback_router
 from app.middlewares.throttling import ThrottlingMiddleware
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -31,6 +32,7 @@ async def main() -> None:
     dp.include_routers(
         start_handler.router, catalog_handler.router,
         selection_handler.router, admin_handler.router,
+        catalog_fallback_router,
     )
     logger.info("Catalog bot starting...")
     await dp.start_polling(bot)

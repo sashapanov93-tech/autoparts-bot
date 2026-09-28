@@ -11,6 +11,7 @@ from app.config import settings
 from app.db.base import init_db
 from app.handlers import cart as cart_handler
 from app.handlers import order_start as order_start_handler
+from app.handlers.fallback import order_fallback_router
 from app.middlewares.throttling import ThrottlingMiddleware
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -26,8 +27,8 @@ async def main() -> None:
     dp = Dispatcher()
     dp.message.middleware(ThrottlingMiddleware(rate=0.7))
     dp.callback_query.middleware(ThrottlingMiddleware(rate=0.4))
-    # порядок важен: сначала deep-link старт, потом корзина
-    dp.include_routers(order_start_handler.router, cart_handler.router)
+    # порядок важен: сначала deep-link старт, потом корзина, в конце страховка
+    dp.include_routers(order_start_handler.router, cart_handler.router, order_fallback_router)
     logger.info("Order bot starting...")
     await dp.start_polling(bot)
 

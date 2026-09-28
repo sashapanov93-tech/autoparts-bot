@@ -17,10 +17,12 @@ def main_menu(is_admin: bool = False) -> InlineKeyboardMarkup:
 
 def order_menu() -> InlineKeyboardMarkup:
     """Меню бота-заказа: корзина + история."""
+    from app.config import settings
+    catalog_username = settings.CATALOG_BOT_USERNAME.strip().lstrip("@")
     b = InlineKeyboardBuilder()
     b.add(InlineKeyboardButton(text="🧺 Корзина", callback_data="cart:show"))
     b.add(InlineKeyboardButton(text="📦 Мои заказы", callback_data="orders:mine"))
-    b.add(InlineKeyboardButton(text="🛒 Каталог (1-й бот)", callback_data="orders:mine"))
+    b.add(InlineKeyboardButton(text="🛒 Каталог и подбор", url=f"https://t.me/{catalog_username}"))
     b.adjust(2, 1)
     return b.as_markup()
 

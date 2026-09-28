@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     CATALOG_BOT_TOKEN: str = ""
     ORDER_BOT_TOKEN: str = ""
     ORDER_BOT_USERNAME: str = "order_bot"  # без @, для кнопки "Заказать"
+    CATALOG_BOT_USERNAME: str = "CarPartsBatumi_bot"  # без @, ссылка из бота-заказа
 
     ADMIN_IDS: str = ""
     DATABASE_URL: str = "sqlite+aiosqlite:///./bot.db"

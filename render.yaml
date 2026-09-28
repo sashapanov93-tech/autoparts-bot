@@ -18,6 +18,8 @@ services:
         sync: false
       - key: ORDER_BOT_USERNAME
         value: CarPartsSupport_bot
+      - key: CATALOG_BOT_USERNAME
+        value: CarPartsBatumi_bot
       - key: ADMIN_IDS
         value: "8802399573"
       - key: SHOP_NAME
