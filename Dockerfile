@@ -18,5 +18,5 @@ COPY app ./app
 RUN useradd -m -u 10001 bot && chown -R bot:bot /app
 USER bot
 
-# команда задаётся в docker-compose (run_catalog / run_order / uvicorn)
-CMD [".venv/bin/python", "-m", "app.run_catalog"]
+# команда по умолчанию — всё сразу (для Render free); в compose переопределяется
+CMD ["./start.sh"]
