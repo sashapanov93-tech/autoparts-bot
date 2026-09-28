@@ -36,11 +36,26 @@ class Product(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     price: Mapped[float] = mapped_column(Numeric(12, 2))
     stock: Mapped[int] = mapped_column(Integer, default=0)
-    photo_id: Mapped[str | None] = mapped_column(String(255), nullable=True)  # telegram file_id
+    photo_id: Mapped[str | None] = mapped_column(String(255), nullable=True)  # legacy: 1-е фото
     category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
 
     category: Mapped[Category | None] = relationship(back_populates="products")
+    photos: Mapped[list["ProductPhoto"]] = relationship(
+        back_populates="product", cascade="all, delete-orphan",
+        order_by="ProductPhoto.position")
+
+
+class ProductPhoto(Base):
+    """Фото товара, до 3 шт., порядок — position."""
+    __tablename__ = "product_photos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
+    file_id: Mapped[str] = mapped_column(String(255))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+
+    product: Mapped[Product] = relationship(back_populates="photos")
 
 
 class CartItem(Base):

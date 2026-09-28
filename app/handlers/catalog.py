@@ -190,12 +190,26 @@ async def cb_category_all(callback: CallbackQuery):
 
 @router.callback_query(F.data.startswith("prod:"))
 async def cb_product(callback: CallbackQuery):
+    from aiogram.types import InputMediaPhoto
+
+    from app.db.models import ProductPhoto
+
     prod_id = int(callback.data.split(":")[1])
     async with SessionFactory() as session:
         p = await session.get(Product, prod_id)
+        photos = []
+        if p:
+            photos = (await session.execute(
+                select(ProductPhoto.file_id)
+                .where(ProductPhoto.product_id == prod_id)
+                .order_by(ProductPhoto.position)
+                .limit(3)
+            )).scalars().all()
     if not p or not p.is_active:
         await callback.answer("Товар недоступен", show_alert=True)
         return
+    if not photos and p.photo_id:
+        photos = [p.photo_id]
     stock = "✅ В наличии" if p.stock > 0 else "❌ Нет в наличии"
     text = (
         f"🔧 <b>{html.escape(p.name)}</b>\n"
@@ -205,8 +219,13 @@ async def cb_product(callback: CallbackQuery):
     )
     if p.description:
         text += f"\n{html.escape(p.description[:500])}"
-    if p.photo_id:
-        await callback.message.answer_photo(p.photo_id, caption=text, reply_markup=product_card_kb(p.id))
+    if len(photos) > 1:
+        media = [InputMediaPhoto(media=fid) for fid in photos[:3]]
+        await callback.message.answer_media_group(media)
+        await callback.message.answer(text, reply_markup=product_card_kb(p.id))
+        await callback.answer()
+    elif len(photos) == 1:
+        await callback.message.answer_photo(photos[0], caption=text, reply_markup=product_card_kb(p.id))
         await callback.answer()
     else:
         await safe_edit(callback.message, text, reply_markup=product_card_kb(p.id))

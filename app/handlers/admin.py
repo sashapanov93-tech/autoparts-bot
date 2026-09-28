@@ -200,32 +200,55 @@ async def ap_desc(message: Message, state: FSMContext):
         desc = ""
     await state.update_data(description=desc)
     await state.set_state(AddProduct.waiting_photo)
-    await message.answer("Фото товара одним сообщением или «-» чтобы пропустить:")
+    await state.update_data(photos=[])
+    await message.answer("📷 Пришлите до 3 фото товара (по одному). Когда хватит — «Готово», без фото — «-»:")
 
 
 @router.message(AddProduct.waiting_photo)
 async def ap_photo(message: Message, state: FSMContext):
+    from app.db.models import ProductPhoto
+
     data = await state.get_data()
-    photo_id = message.photo[-1].file_id if message.photo else None
-    if message.text and message.text.strip() != "-":
-        # ждём либо фото, либо "-"
-        if not photo_id:
-            await message.answer("Пришлите фото или «-».")
+    photos: list[str] = data.get("photos", [])
+    txt = (message.text or "").strip() if message.text else ""
+
+    async def _finish(photo_ids: list[str]) -> None:
+        async with SessionFactory() as session:
+            p = Product(
+                article=data["article"],
+                name=data["name"],
+                price=data["price"],
+                stock=data["stock"],
+                category_id=data["category_id"],
+                description=data.get("description") or None,
+                photo_id=photo_ids[0] if photo_ids else None,
+            )
+            session.add(p)
+            await session.flush()
+            for i, fid in enumerate(photo_ids[:3]):
+                session.add(ProductPhoto(product_id=p.id, file_id=fid, position=i))
+            await session.commit()
+
+    if message.photo:
+        if len(photos) >= 3:
+            await message.answer("Уже 3 фото — отправьте «Готово» чтобы сохранить.")
             return
-    async with SessionFactory() as session:
-        p = Product(
-            article=data["article"],
-            name=data["name"],
-            price=data["price"],
-            stock=data["stock"],
-            category_id=data["category_id"],
-            description=data.get("description") or None,
-            photo_id=photo_id,
-        )
-        session.add(p)
-        await session.commit()
-    await state.clear()
-    await message.answer("✅ Товар добавлен!", reply_markup=admin_menu_kb())
+        photos.append(message.photo[-1].file_id)
+        await state.update_data(photos=photos)
+        if len(photos) >= 3:
+            await _finish(photos)
+            await state.clear()
+            await message.answer("✅ Товар добавлен (3 фото)!", reply_markup=admin_menu_kb())
+        else:
+            await message.answer(f"📷 Фото {len(photos)}/3 принято. Ещё или «Готово»/«-»:")
+        return
+    if txt.lower() in ("готово", "готово.", "-", "нет", "пропустить"):
+        await _finish(photos)
+        await state.clear()
+        n = f" ({len(photos)} фото)" if photos else ""
+        await message.answer(f"✅ Товар добавлен{n}!", reply_markup=admin_menu_kb())
+        return
+    await message.answer("Пришлите фото или «Готово»/«-».")
 
 
 # --- Заказы ---

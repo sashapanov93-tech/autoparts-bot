@@ -110,12 +110,17 @@ async def index(_: str = Depends(check_auth)):
 # ---------- Товары ----------
 @app.get("/products", response_class=HTMLResponse)
 async def products_list(_: str = Depends(check_auth)):
+    from app.db.models import ProductPhoto
     async with SessionFactory() as s:
         rows = (await s.execute(select(Product).order_by(Product.id.desc()).limit(100))).scalars().all()
         cats = (await s.execute(select(Category).order_by(Category.name))).scalars().all()
+        photo_counts = dict((await s.execute(
+            select(ProductPhoto.product_id, func.count(ProductPhoto.id)).group_by(ProductPhoto.product_id)
+        )).all())
     cat_opts = "".join(f"<option value='{c.id}'>{_html.escape(c.name or '')}</option>" for c in cats)
     trs = "".join(f"<tr><td>{p.id}</td><td>{_html.escape(p.article or '')}</td>"
-                   f"<td>{_html.escape(p.name or '')}</td><td>{p.price}</td><td>{p.stock}</td></tr>" for p in rows)
+                   f"<td>{_html.escape(p.name or '')}</td><td>{p.price}</td><td>{p.stock}</td>"
+                   f"<td>{'📷' + str(photo_counts.get(p.id, 0)) if photo_counts.get(p.id) else '—'}</td></tr>" for p in rows)
     form = (f"<h3>Добавить товар</h3><form method='post' action='/products'>"
             f"Артикул <input name='article' required maxlength=64> Название <input name='name' required maxlength=200><br>"
             f"Цена <input name='price' required> Остаток <input name='stock' value='0'><br>"
@@ -129,7 +134,7 @@ async def products_list(_: str = Depends(check_auth)):
             "<button>Загрузить</button></form>"
             "<p><small>Колонки: article, name, price, stock, category, description, make, model, year_from, year_to. "
             "По существующему артикулу — обновление.</small></p>")
-    return page("Товары", form + f"<table><tr><th>ID</th><th>Артикул</th><th>Название</th><th>Цена</th><th>Ост.</th></tr>{trs}</table>")
+    return page("Товары", form + f"<table><tr><th>ID</th><th>Артикул</th><th>Название</th><th>Цена</th><th>Ост.</th><th>Фото</th></tr>{trs}</table>")
 
 
 @app.post("/products")
