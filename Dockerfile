@@ -13,6 +13,8 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-cache
 
 COPY app ./app
+COPY start.sh ./
+RUN chmod +x start.sh
 
 # без root — меньше ущерб при компрометации
 RUN useradd -m -u 10001 bot && chown -R bot:bot /app
