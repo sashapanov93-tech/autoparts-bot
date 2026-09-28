@@ -330,6 +330,6 @@ async def orders_status(order_id: int, status: str = Form(max_length=16), _: str
     return RedirectResponse("/orders", status_code=303)
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
     return {"ok": True}
