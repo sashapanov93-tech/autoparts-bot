@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: autoparts
+      POSTGRES_PASSWORD: autoparts_secret
+      POSTGRES_DB: autoparts
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  catalog_bot:
+    build: .
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://autoparts:autoparts_secret@db:5432/autoparts
+    command: python -m app.run_catalog
+
+  order_bot:
+    build: .
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://autoparts:autoparts_secret@db:5432/autoparts
+    command: python -m app.run_order
+
+  web:
+    build: .
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://autoparts:autoparts_secret@db:5432/autoparts
+    ports:
+      - "8000:8000"
+    command: uvicorn app.web_admin:app --host 0.0.0.0 --port 8000
+
+volumes:
+  pgdata:
